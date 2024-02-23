@@ -1,0 +1,107 @@
+import random
+
+# Define card ranks and suits
+ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+suits = ['♠', '♥', '♦', '♣']
+
+# Initialize deck
+deck = [{'rank': rank, 'suit': suit} for rank in ranks for suit in suits]
+
+# Function to shuffle the deck
+def shuffle_deck(deck):
+    random.shuffle(deck)
+
+# Function to deal a hand of 5 cards
+def deal_hand(deck):
+    return [deck.pop() for _ in range(5)]
+
+# Function to display a hand
+def print_hand(hand):
+    return ', '.join(card['rank'] + card['suit'] for card in hand)
+
+# Function to evaluate the rank of a hand
+def evaluate_hand(hand):
+    # Count ranks and suits
+    rank_counts = {rank: sum(1 for card in hand if card['rank'] == rank) for rank in ranks}
+    suit_counts = {suit: sum(1 for card in hand if card['suit'] == suit) for suit in suits}
+    
+    # Check for flush
+    is_flush = any(count == 5 for count in suit_counts.values())
+    
+    # Check for straight
+    sorted_ranks = sorted(ranks.index(card['rank']) for card in hand)
+    is_straight = sorted_ranks[-1] - sorted_ranks[0] == 4 and len(set(sorted_ranks)) == 5
+    
+    # Check for straight flush
+    if is_straight and is_flush:
+        return 'Straight Flush', max(sorted_ranks)
+    
+    # Check for four of a kind
+    for rank, count in rank_counts.items():
+        if count == 4:
+            return 'Four of a Kind', ranks.index(rank)
+    
+    # Check for full house
+    has_three_of_a_kind = any(count == 3 for count in rank_counts.values())
+    has_pair = any(count == 2 for count in rank_counts.values())
+    if has_three_of_a_kind and has_pair:
+        return 'Full House', max(ranks.index(rank) for rank, count in rank_counts.items() if count == 3)
+    
+    # Check for flush
+    if is_flush:
+        return 'Flush', max(sorted_ranks)
+    
+    # Check for straight
+    if is_straight:
+        return 'Straight', max(sorted_ranks)
+    
+    # Check for three of a kind
+    for rank, count in rank_counts.items():
+        if count == 3:
+            return 'Three of a Kind', ranks.index(rank)
+    
+    # Check for two pairs
+    pairs = [ranks.index(rank) for rank, count in rank_counts.items() if count == 2]
+    if len(pairs) == 2:
+        return 'Two Pair', max(pairs)
+    
+    # Check for one pair
+    for rank, count in rank_counts.items():
+        if count == 2:
+            return 'One Pair', ranks.index(rank)
+    
+    # Otherwise, high card
+    return 'High Card', max(sorted_ranks)
+
+# Function to determine the winner
+def determine_winner(players):
+    max_rank = None
+    winning_player = None
+    
+    for player, hand in players.items():
+        hand_rank, rank_value = evaluate_hand(hand)
+        
+        if max_rank is None or rank_value > max_rank[1] or (rank_value == max_rank[1] and hand_rank in ['Flush', 'Straight', 'Full House', 'One Pair', 'Two Pair', 'Three of a Kind', 'Four of a Kind', 'Straight Flush']):
+            max_rank = (hand_rank, rank_value)
+            winning_player = player
+    
+    return winning_player, max_rank
+
+# Function to play the poker game
+def play_poker(num_players):
+    shuffle_deck(deck)
+    
+    players = {f'Player {i+1}': deal_hand(deck) for i in range(num_players)}
+    
+    print("\n-- Poker Game --\n")
+    print("Dealing hands...\n")
+    
+    for player, hand in players.items():
+        print(f"{player}: {print_hand(hand)}")
+    
+    winner, (winning_hand, rank_value) = determine_winner(players)
+    
+    print(f"\n{winner} wins with {winning_hand} ({ranks[rank_value]})!\n")
+
+# Play a 5-player game
+play_poker(5)
